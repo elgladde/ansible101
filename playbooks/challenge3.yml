@@ -1,0 +1,31 @@
+# setup webservers
+
+---
+  - hosts: webservers
+    become: true
+    tasks:
+      - name: update all packages to the latest version
+        yum: name=* state=latest
+
+      - name: install apache webserver
+        yum: name=apache2 state=present
+
+      - name: delete original index.html file
+        file: path=/var/www/html/index.html state=absent
+
+      - name: Create a directory for github to use
+        file:
+          path: /var/www/github
+          state: directory
+
+      - name: download github repository
+        git:
+          repo: 'https://github.com/elgladde/ansible101.git'
+          dest: /var/www/github
+
+      - name: copy index.html into the /var/www/html folder
+        command: mv /var/www/github/index.html /var/www/html
+        notify: start apache
+
+      - name: start apache
+        service: name=apache2 state=started
